@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
-from prophet import Prophet
 
 # Load the data
 st.title("Amazon Sales Dashboard")
@@ -18,7 +17,8 @@ df['discount_percentage'] = pd.to_numeric(df['discount_percentage'].str.replace(
 df['rating'] = pd.to_numeric(df['rating'], errors='coerce')
 df['rating_count'] = pd.to_numeric(df['rating_count'].str.replace(',', ''), errors='coerce')
 
-df.dropna(inplace=True)  # Drop rows with missing values
+# Handle missing values by filling them with a placeholder or dropping them
+df.fillna(0, inplace=True)  # Replace null values with 0, or you can use another value
 
 st.write("Cleaned Data")
 st.write(df.head())
@@ -55,33 +55,11 @@ st.subheader(f'Average Rating for {category}')
 avg_rating = filtered_df['rating'].mean()
 st.write(f'Average Rating: {avg_rating:.2f}')
 
-# Sales Forecasting using Prophet
-st.subheader('Sales Forecasting')
-
-# Prepare the data for Prophet (Using discounted price as proxy for sales)
-df_prophet = filtered_df[['product_name', 'discounted_price']].groupby('product_name').sum().reset_index()
-df_prophet.rename(columns={'product_name': 'ds', 'discounted_price': 'y'}, inplace=True)
-
-# Initialize the Prophet model
-model = Prophet()
-model.fit(df_prophet)
-
-# Future dataframe for next 365 days
-future = model.make_future_dataframe(periods=365)
-forecast = model.predict(future)
-
-# Plot the forecast
-fig2 = model.plot(forecast)
-st.pyplot(fig2)
-
-st.write("Forecast Data")
-st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
-
-# Filter by Date Range
-st.subheader('Filter by Date Range')
-start_date = st.date_input('Start date', df['product_name'].min())
-end_date = st.date_input('End date', df['product_name'].max())
-filtered_df = df[(df['product_name'] >= pd.to_datetime(start_date)) & (df['product_name'] <= pd.to_datetime(end_date))]
-
-st.write(f"Showing data from {start_date} to {end_date}")
-st.write(filtered_df)
+# Sales Trend Over Time
+# We assume that the dataset does not have date-related columns, so we'll create an arbitrary time series for visualization purposes.
+st.subheader('Sales Trend Over Time')
+fig, ax = plt.subplots()
+filtered_df['index'] = range(len(filtered_df))  # Create a pseudo time index
+sns.lineplot(data=filtered_df, x='index', y='discounted_price', ax=ax)
+ax.set_title('Sales Trend Over Time (Pseudo Time)')
+st.pyplot(fig)
